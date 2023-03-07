@@ -6,6 +6,11 @@ __pycache__/
 # C extensions
 *.so
 
+# IDEs and editors
+.project
+.idea/
+.vscode/
+
 # Distribution / packaging
 .Python
 env/

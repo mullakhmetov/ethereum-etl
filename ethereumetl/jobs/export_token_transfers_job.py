@@ -24,7 +24,12 @@ from ethereumetl.executors.batch_work_executor import BatchWorkExecutor
 from blockchainetl.jobs.base_job import BaseJob
 from ethereumetl.mappers.token_transfer_mapper import EthTokenTransferMapper
 from ethereumetl.mappers.receipt_log_mapper import EthReceiptLogMapper
-from ethereumetl.service.token_transfer_extractor import EthTokenTransferExtractor, TRANSFER_EVENT_TOPIC
+from ethereumetl.service.token_transfer_extractor import (
+    EthTokenTransferExtractor,
+    TRANSFER_EVENT_TOPIC,
+    TRANSFER_ERC1155_EVENT_TOPIC,
+    TRANSFER_BATCH_ERC1155_EVENT_TOPIC,
+)
 from ethereumetl.utils import validate_range
 
 
@@ -66,32 +71,38 @@ class ExportTokenTransfersJob(BaseJob):
     def _export_batch(self, block_number_batch):
         assert len(block_number_batch) > 0
         # https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_getfilterlogs
-        filter_params = {
-            'fromBlock': block_number_batch[0],
-            'toBlock': block_number_batch[-1],
-            'topics': [TRANSFER_EVENT_TOPIC]
-        }
+        topics = [TRANSFER_EVENT_TOPIC, TRANSFER_ERC1155_EVENT_TOPIC, TRANSFER_BATCH_ERC1155_EVENT_TOPIC]
 
-        if self.tokens is not None and len(self.tokens) > 0:
-            filter_params['address'] = self.tokens
+        for topic in topics:
+            filter_params = {
+                'fromBlock': block_number_batch[0],
+                'toBlock': block_number_batch[-1],
+                'topics': [topic]
+            }
 
-        try:
-            event_filter = self.web3.eth.filter(filter_params)
-            events = event_filter.get_all_entries()
-        except ValueError as e:
-            if str(e) == "{'code': -32000, 'message': 'the method is currently not implemented: eth_newFilter'}":
-                self._supports_eth_newFilter = False
-                events = self.web3.eth.getLogs(filter_params)
-            else:
-                raise(e)
-        for event in events:
-            log = self.receipt_log_mapper.web3_dict_to_receipt_log(event)
-            token_transfer = self.token_transfer_extractor.extract_transfer_from_log(log)
-            if token_transfer is not None:
-                self.item_exporter.export_item(self.token_transfer_mapper.token_transfer_to_dict(token_transfer))
+            if self.tokens is not None and len(self.tokens) > 0:
+                filter_params['address'] = self.tokens
 
-        if self._supports_eth_newFilter:
-            self.web3.eth.uninstallFilter(event_filter.filter_id)
+            try:
+                event_filter = self.web3.eth.filter(filter_params)
+                events = event_filter.get_all_entries()
+            except ValueError as e:
+                if str(e) == "{'code': -32000, 'message': 'the method is currently not implemented: eth_newFilter'}":
+                    self._supports_eth_newFilter = False
+                    events = self.web3.eth.getLogs(filter_params)
+                else:
+                    raise (e)
+            for event in events:
+                log = self.receipt_log_mapper.web3_dict_to_receipt_log(event)
+                token_transfers = self.token_transfer_extractor.extract_transfer_from_log(log)
+
+                if isinstance(token_transfers, list):
+                    for token_transfer_item in token_transfers:
+                        self.item_exporter.export_item(
+                            self.token_transfer_mapper.token_transfer_to_dict(token_transfer_item))
+
+            if self._supports_eth_newFilter:
+                self.web3.eth.uninstallFilter(event_filter.filter_id)
 
     def _end(self):
         self.batch_work_executor.shutdown()
