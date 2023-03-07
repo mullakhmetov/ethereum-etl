@@ -32,8 +32,8 @@ setup(
     python_requires='>=3.7.2,<4',
     install_requires=[
         'web3>=5.29,<6',
-        'eth-utils==1.10',
-        'eth-abi==2.1.1',
+        'eth-utils==2.1.0',
+        'eth-abi==3.0.1',
         # TODO: This has to be removed when "ModuleNotFoundError: No module named 'eth_utils.toolz'" is fixed at eth-abi
         'python-dateutil>=2.8.0,<3',
         'click==8.0.4',
