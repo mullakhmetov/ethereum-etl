@@ -38,7 +38,7 @@ class EthContractService:
                     instructions = block.instructions
                     block_push4_instructions = [inst for inst in instructions if inst.name == 'PUSH4']
                     push4_instructions.update(block_push4_instructions)
-                
+
                 return sorted(list({'0x' + inst.operand for inst in push4_instructions}))
             else:
                 return []
@@ -58,6 +58,17 @@ class EthContractService:
             c.implements('allowance(address,address)')
         ])
 
+    def is_erc1155_contract(self, function_sighashes):
+        c = ContractWrapper(function_sighashes)
+        return all([
+            c.implements('balanceOf(address,uint256)'),
+            c.implements('balanceOfBatch(address[],uint256[])'),
+            c.implements('setApprovalForAll(address,bool)'),
+            c.implements('isApprovedForAll(address,address)'),
+            c.implements('safeTransferFrom(address,address,uint256,uint256,bytes)'),
+            c.implements('safeBatchTransferFrom(address,address,uint256[],uint256[],bytes)')
+        ])
+
     # https://github.com/ethereum/EIPs/blob/master/EIPS/eip-721.md
     # https://github.com/OpenZeppelin/openzeppelin-solidity/blob/master/contracts/token/ERC721/ERC721Basic.sol
     # CryptoKitties contracts doesn't strictly implement erc721 interface
@@ -75,12 +86,12 @@ class EthContractService:
             c.implements('transferFrom(address,address,uint256)'),
             c.implements('safeTransferFrom(address,address,uint256)'),
             c.implements('safeTransferFrom(address,address,uint256,bytes)'),
-        ]) or self.is_crypto_kitties_contract(function_sighashes) 
+        ]) or self.is_crypto_kitties_contract(function_sighashes)
 
     # https://etherscan.io/address/0x06012c8cf97bead5deae237070f9587f8e7a266d#code#L52
     def is_crypto_kitties_contract(self, function_sighashes):
         return function_sighashes == [
-            '0x01ffc9a7', '0x0519ce79', '0x0560ff44', '0x05e45546', '0x06fdde03', '0x095ea7b3','0x0a0f8168',
+            '0x01ffc9a7', '0x0519ce79', '0x0560ff44', '0x05e45546', '0x06fdde03', '0x095ea7b3', '0x0a0f8168',
             '0x0d9f5aed', '0x0e583df0', '0x14001f4c', '0x18160ddd', '0x183a7947', '0x1940a936', '0x19c2f201',
             '0x21717ebf', '0x23b872dd', '0x24e7a38a', '0x27d7874c', '0x27ebe40a', '0x2ba73c15', '0x3d7d3f5a',
             '0x3f4ba83a', '0x454a2ab3', '0x46116e6f', '0x46d22c70', '0x481af3d3', '0x4ad8c938', '0x4b85fd55',
