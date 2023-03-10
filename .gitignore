@@ -10,6 +10,7 @@ __pycache__/
 .project
 .idea/
 .vscode/
+.DS_Store
 
 # Distribution / packaging
 .Python

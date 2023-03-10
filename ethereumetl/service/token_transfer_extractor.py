@@ -49,10 +49,11 @@ class EthTokenTransferExtractor(object):
             # This is normal, topics can be empty for anonymous events
             return None
 
-        if (topics[0]).casefold() == TRANSFER_EVENT_TOPIC:
-            return self._handle_transfer(receipt_log, topics)
+        # TODO: uncomment before release
+        # if (topics[0]).casefold() == TRANSFER_EVENT_TOPIC:
+        #     return self._handle_transfer(receipt_log, topics)
 
-        elif (topics[0]).casefold() == TRANSFER_ERC1155_EVENT_TOPIC:
+        if (topics[0]).casefold() == TRANSFER_ERC1155_EVENT_TOPIC:
             return self._handle_erc1155_transfer(receipt_log, topics)
 
         elif (topics[0]).casefold() == TRANSFER_BATCH_ERC1155_EVENT_TOPIC:
