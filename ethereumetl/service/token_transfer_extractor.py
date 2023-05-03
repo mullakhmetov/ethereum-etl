@@ -130,10 +130,10 @@ class EthTokenTransferExtractor(object):
         #     from transaction with hash – 0x9ecd9463c4359a8347da8f0956f897f0b1aca58e12d6a9d9b47d4d07d724a9b2
         token_transfers = []
 
-        id_count = hex_to_dec(topics_with_data[6])
-        value_count = hex_to_dec(topics_with_data[6 + id_count + 1])
+        ids_count = hex_to_dec(topics_with_data[6])
+        values_count = hex_to_dec(topics_with_data[6 + ids_count + 1])
 
-        if id_count != value_count:
+        if ids_count != values_count:
             logger.warning(
                 "The number of ids and values is not equal in log {} of transaction {}".format(
                     receipt_log.log_index, receipt_log.transaction_hash
@@ -141,13 +141,24 @@ class EthTokenTransferExtractor(object):
             )
             return None
 
-        for i in range(0, id_count):
+        for i in range(0, ids_count):
+            # 6: The offset to the beginning of the ids array in the topics_with_data list. The first 6 elements are event signature, operator, from, to, id_key, and value_key.
+            # 1: The element after the ids array, which is the ids_count.
+            # i: The current index in the range of ids_count. This value increments with each iteration.
+            token_id = hex_to_dec(topics_with_data[6 + 1 + i])
+            # 6: The offset to the beginning of the ids array in the topics_with_data list. The first 6 elements are event signature, operator, from, to, id_key, and value_key.
+            # ids_count: The number of ids in the ids array.
+            # 1: The element after the ids array, which is the value_count.
+            # i: The current index in the range of ids_count. This value increments with each iteration.
+            # 1: The offset to the beginning of the values array, which is right after the value_count.
+            value = hex_to_dec(topics_with_data[6 + ids_count + 1 + i + 1])
+
             token_transfer = EthTokenTransfer()
             token_transfer.token_address = to_normalized_address(receipt_log.address)
             token_transfer.from_address = word_to_address(topics_with_data[2])
             token_transfer.to_address = word_to_address(topics_with_data[3])
-            token_transfer.token_id = hex_to_dec(topics_with_data[6 + i])
-            token_transfer.value = hex_to_dec(topics_with_data[6 + i + 1])
+            token_transfer.token_id = token_id
+            token_transfer.value = value
             token_transfer.transaction_hash = receipt_log.transaction_hash
             token_transfer.log_index = receipt_log.log_index
             token_transfer.block_number = receipt_log.block_number
