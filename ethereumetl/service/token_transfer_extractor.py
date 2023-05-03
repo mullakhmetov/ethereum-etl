@@ -30,20 +30,19 @@ from ethereumetl.utils import chunk_string, hex_to_dec, to_normalized_address
 # https://ethereum.stackexchange.com/questions/12553/understanding-logs-and-log-blooms
 
 # Transfer(address,address,uint256) – ERC20/ERC721
-TRANSFER_EVENT_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
+TRANSFER_EVENT_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
 # TransferSingle(address,address,address,uint256,uint256) – ERC1155
-TRANSFER_ERC1155_EVENT_TOPIC = '0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62'
+TRANSFER_ERC1155_EVENT_TOPIC = "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62"
 
-# TransferSingle(address,address,address,uint256[],uint256[]) – ERC1155
-TRANSFER_BATCH_ERC1155_EVENT_TOPIC = '0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb'
+# TransferBatch(address,address,address,uint256[],uint256[]) – ERC1155
+TRANSFER_BATCH_ERC1155_EVENT_TOPIC = "0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb"
 
 logger = logging.getLogger(__name__)
 
 
 class EthTokenTransferExtractor(object):
     def extract_transfer_from_log(self, receipt_log):
-
         topics = receipt_log.topics
         if topics is None or len(topics) < 1:
             # This is normal, topics can be empty for anonymous events
@@ -66,8 +65,11 @@ class EthTokenTransferExtractor(object):
         # if the number of topics and fields in data part != 4, then it's a weird event
         # 4 topics are(in exact order): event signature, from, to, value
         if len(topics_with_data) != 4:
-            logger.warning("The number of topics and data parts is not equal to 4 in log {} of transaction {}"
-                           .format(receipt_log.log_index, receipt_log.transaction_hash))
+            logger.warning(
+                "The number of topics and data parts is not equal to 4 in log {} of transaction {}".format(
+                    receipt_log.log_index, receipt_log.transaction_hash
+                )
+            )
             return None
 
         token_transfer = EthTokenTransfer()
@@ -87,8 +89,11 @@ class EthTokenTransferExtractor(object):
         # if the number of topics != 4 and with fields in data part != 6, then it's a weird event
         # 6 topics are(in exact order): event signature, operator, from, to, id, value
         if len(topics_with_data) != 6 or len(topics) != 4:
-            logger.warning("The number of topics and data parts is not equal to 6 in log {} of transaction {}"
-                           .format(receipt_log.log_index, receipt_log.transaction_hash))
+            logger.warning(
+                "The number of topics and data parts is not equal to 6 in log {} of transaction {}".format(
+                    receipt_log.log_index, receipt_log.transaction_hash
+                )
+            )
             return None
 
         token_transfer = EthTokenTransfer()
@@ -106,8 +111,11 @@ class EthTokenTransferExtractor(object):
         topics_with_data = topics + split_to_words(receipt_log.data)
         # if the number of topics != 4 then it's a weird event
         if len(topics) != 4:
-            logger.warning("The number of topics and data parts is not equal to 6 in log {} of transaction {}"
-                           .format(receipt_log.log_index, receipt_log.transaction_hash))
+            logger.warning(
+                "The number of topics and data parts is not equal to 6 in log {} of transaction {}".format(
+                    receipt_log.log_index, receipt_log.transaction_hash
+                )
+            )
             return None
 
         # structure of indexed fields in topics:
@@ -122,8 +130,11 @@ class EthTokenTransferExtractor(object):
         value_count = hex_to_dec(topics_with_data[6 + id_count + 1])
 
         if id_count != value_count:
-            logger.warning("The number of ids and values is not equal in log {} of transaction {}"
-                           .format(receipt_log.log_index, receipt_log.transaction_hash))
+            logger.warning(
+                "The number of ids and values is not equal in log {} of transaction {}".format(
+                    receipt_log.log_index, receipt_log.transaction_hash
+                )
+            )
             return None
 
         for i in range(0, id_count):
@@ -144,7 +155,7 @@ def split_to_words(data):
     if data and len(data) > 2:
         data_without_0x = data[2:]
         words = list(chunk_string(data_without_0x, 64))
-        words_with_0x = list(map(lambda word: '0x' + word, words))
+        words_with_0x = list(map(lambda word: "0x" + word, words))
         return words_with_0x
     return []
 
@@ -153,6 +164,6 @@ def word_to_address(param):
     if param is None:
         return None
     elif len(param) >= 40:
-        return to_normalized_address('0x' + param[-40:])
+        return to_normalized_address("0x" + param[-40:])
     else:
         return to_normalized_address(param)
