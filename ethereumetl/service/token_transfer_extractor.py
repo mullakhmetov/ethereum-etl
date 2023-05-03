@@ -33,9 +33,11 @@ from ethereumetl.utils import chunk_string, hex_to_dec, to_normalized_address
 TRANSFER_EVENT_TOPIC = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
 
 # TransferSingle(address,address,address,uint256,uint256) – ERC1155
+# (address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value)
 TRANSFER_ERC1155_EVENT_TOPIC = "0xc3d58168c5ae7397731d063d5bbf3d657854427343f4c083240f7aacaa2d0f62"
 
 # TransferBatch(address,address,address,uint256[],uint256[]) – ERC1155
+# TransferBatch(address indexed operator, address indexed from, address indexed to, uint256[] ids, uint256[] values)
 TRANSFER_BATCH_ERC1155_EVENT_TOPIC = "0x4a39dc06d4c0dbc64b70af90fd698a233a518aa5d07e595d983b8c0526c8f7fb"
 
 logger = logging.getLogger(__name__)
@@ -100,6 +102,7 @@ class EthTokenTransferExtractor(object):
         token_transfer.token_address = to_normalized_address(receipt_log.address)
         token_transfer.from_address = word_to_address(topics_with_data[2])
         token_transfer.to_address = word_to_address(topics_with_data[3])
+        token_transfer.token_id = hex_to_dec(topics_with_data[4])
         token_transfer.value = hex_to_dec(topics_with_data[5])
         token_transfer.transaction_hash = receipt_log.transaction_hash
         token_transfer.log_index = receipt_log.log_index
@@ -142,6 +145,7 @@ class EthTokenTransferExtractor(object):
             token_transfer.token_address = to_normalized_address(receipt_log.address)
             token_transfer.from_address = word_to_address(topics_with_data[2])
             token_transfer.to_address = word_to_address(topics_with_data[3])
+            token_transfer.token_id = hex_to_dec(topics_with_data[6 + i])
             token_transfer.value = hex_to_dec(topics_with_data[6 + i + 1])
             token_transfer.transaction_hash = receipt_log.transaction_hash
             token_transfer.log_index = receipt_log.log_index
