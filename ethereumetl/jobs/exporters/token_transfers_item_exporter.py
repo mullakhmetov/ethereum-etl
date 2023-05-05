@@ -27,6 +27,7 @@ FIELDS_TO_EXPORT = [
     'token_address',
     'from_address',
     'to_address',
+    'token_id',
     'value',
     'transaction_hash',
     'log_index',
